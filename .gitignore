@@ -1,0 +1,4 @@
+# Never commit real provider secrets. Only the template is versioned.
+*.env
+!*.env.example
+!providers.env.example
