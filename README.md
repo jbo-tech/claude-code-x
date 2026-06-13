@@ -67,6 +67,28 @@ ccx add [name]   # add a provider interactively
 claude           # untouched: official Anthropic
 ```
 
+## Central provider keys
+
+Other projects (llm-sparring, jobset&match-v2) use a shared key store at
+`~/.config/llm-provider-keys/providers.env`. ccx does **not** read from it
+directly — it uses its own per-provider `.env` files because each provider
+overrides `ANTHROPIC_BASE_URL`, model names, and auth in a way that's specific
+to the Claude Code API proxy pattern.
+
+If you want to avoid duplicating raw API keys between ccx and the central store,
+you can source the central file inside a provider `.env`:
+
+```bash
+# ~/.config/claude-code-x/deepseek.env
+# shellcheck source=/dev/null
+. "$HOME/.config/llm-provider-keys/providers.env"
+ANTHROPIC_BASE_URL=https://api.deepseek.com
+ANTHROPIC_AUTH_TOKEN=$DEEPSEEK_API_KEY
+ANTHROPIC_MODEL=deepseek-chat
+```
+
+This is optional — ccx works fine standalone.
+
 ## Security notes
 
 - Secrets live in `~/.config/claude-code-x/*.env`, `600`, **outside this repo**.

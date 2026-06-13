@@ -17,6 +17,7 @@
 set -u
 
 CONFIG_DIR="${CLAUDE_CODE_X_DIR:-$HOME/.config/claude-code-x}"
+CENTRAL_STORE="${LLM_PROVIDER_KEYS:-$HOME/.config/llm-provider-keys/providers.env}"
 
 # --- presentation (colour only when stderr is a terminal) -------------------
 if [ -t 2 ]; then
@@ -97,23 +98,51 @@ add_provider() {
 	printf 'Default model name: ' >&2
 	read -r model
 
-	# token: read with echo off so it never shows on screen or in scrollback
-	printf 'Auth token (hidden): ' >&2
-	saved=$(stty -g 2>/dev/null) && stty -echo 2>/dev/null
-	read -r token
-	[ -n "$saved" ] && stty "$saved" 2>/dev/null
-	printf '\n' >&2
+	use_store=n
+	if [ -r "$CENTRAL_STORE" ]; then
+		printf 'Use central key store (%s)? [Y/n] ' "$CENTRAL_STORE" >&2
+		read -r ans
+		case "$ans" in n | N | no) use_store=n ;; *) use_store=y ;; esac
+	fi
 
-	if [ -z "$base" ] || [ -z "$token" ]; then
-		echo "ccx: base URL and token are required." >&2
+	if [ "$use_store" = y ]; then
+		printf 'Variable name in store (e.g. DEEPSEEK_API_KEY): ' >&2
+		read -r key_var
+		if [ -z "$key_var" ]; then
+			echo "ccx: variable name is required." >&2
+			return 1
+		fi
+		if ! grep -q "^${key_var}=" "$CENTRAL_STORE" 2>/dev/null; then
+			printf '%s⚠%s  %s not found in %s — add it there first.\n' \
+				"$C" "$R" "$key_var" "$CENTRAL_STORE" >&2
+			return 1
+		fi
+		token_line="ANTHROPIC_AUTH_TOKEN=\$$key_var"
+	else
+		# token: read with echo off so it never shows on screen or in scrollback
+		printf 'Auth token (hidden): ' >&2
+		saved=$(stty -g 2>/dev/null) && stty -echo 2>/dev/null
+		read -r token
+		[ -n "$saved" ] && stty "$saved" 2>/dev/null
+		printf '\n' >&2
+		if [ -z "$token" ]; then
+			echo "ccx: auth token is required." >&2
+			return 1
+		fi
+		token_line="ANTHROPIC_AUTH_TOKEN=$(shell_quote "$token")"
+	fi
+
+	if [ -z "$base" ]; then
+		echo "ccx: base URL is required." >&2
 		return 1
 	fi
 
-	umask 077 # belt: file is private even before the explicit chmod
+	umask 077
 	{
 		printf '# %s — added via `ccx add`\n' "$name"
+		[ "$use_store" = y ] && printf '# shellcheck source=/dev/null\n. "$HOME/.config/llm-provider-keys/providers.env"\n'
 		printf 'ANTHROPIC_BASE_URL=%s\n' "$(shell_quote "$base")"
-		printf 'ANTHROPIC_AUTH_TOKEN=%s\n' "$(shell_quote "$token")"
+		printf '%s\n' "$token_line"
 		[ -n "$model" ] && printf 'ANTHROPIC_MODEL=%s\n' "$(shell_quote "$model")"
 	} >"$env_file"
 	chmod 600 "$env_file"
