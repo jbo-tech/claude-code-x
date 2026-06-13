@@ -40,3 +40,20 @@ command stays the short `ccx`.
 the filesystem while keeping a terse command. `claude-setup` is a SEPARATE repo and
 must not be touched by this project.
 **Date**: 2026-06-11
+
+### Provider `.env` sources central key store
+**Decision**: Provider `.env` files source `~/.config/llm-provider-keys/providers.env`
+(the shared central store) and reference keys by variable name (`$DEEPSEEK_API_KEY`,
+`$ZAI_API_KEY`, etc.) instead of embedding tokens directly. `ccx add` proposes this
+pattern when the store exists; standalone (raw token) remains available. `install.sh`
+bootstraps the store if absent.
+**Context**: Multiple projects (llm-sparring, jobset&match-v2, ccx) use the same
+provider keys. Duplicating tokens across files means multiple places to update on
+rotation. The central store was already in place for the other projects; ccx was the
+last holdout. Keys in the store are the source of truth; ccx `.env` maps them to
+`ANTHROPIC_AUTH_TOKEN` for the Claude Code proxy pattern.
+**Alternatives considered**: Reading the central store directly in `ccx` (rejected:
+each provider needs `BASE_URL` + model config alongside the token, so a per-provider
+`.env` is still needed). Merging all provider configs into the central store (rejected:
+the `ANTHROPIC_*` variable mapping is ccx-specific, doesn't belong in a shared file).
+**Date**: 2026-06-13

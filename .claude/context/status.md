@@ -4,11 +4,36 @@
 Switch Claude Code between alternative providers (GLM/z.ai, Kimi, DeepSeek, …)
 without duplicating `settings.json` and without storing tokens in clear in the
 config. Single canonical `settings.json`, provider routing injected via env.
+Provider API keys centralized in `~/.config/llm-provider-keys/providers.env`.
 
 ## Current focus
-Initial tool is built and verified. Pending: optional `git commit` of the repo.
+Central key store integration complete. Pending: commit, fix minor debt items
+(T1 grep pattern, T2 hardcoded path — see `docs/reference.md`).
 
 ## Log
+
+### 2026-06-13
+- Done:
+  - **Audit** of provider key migration against `validation-provider-keys.md`.
+    Found: all 4 `.env` files still had hardcoded keys, `GLM_API_KEY` and
+    `MOONSHOT_API_KEY` missing from central store, `ccx add` and `install.sh`
+    unaware of the central store.
+  - **Scoped** 5-step migration plan (store keys, migrate `.env`, `ccx add`
+    store option, `install.sh` bootstrap, `providers.env.example` two-pattern).
+  - **Implemented** all 5 steps — 6/6 success criteria met:
+    - Added `ZAI_API_KEY` + `MOONSHOT_API_KEY` to central store.
+    - Rewrote 4 provider `.env` files: all now source central store, no raw keys.
+    - `ccx add` prompts "Use central key store?" when store exists; writes
+      sourcing pattern or raw token accordingly.
+    - `install.sh` proposes creating the central store if absent.
+    - `providers.env.example` documents both Pattern A (store) and B (standalone).
+  - **Documentation** generated: `docs/architecture.md`, `docs/reference.md`
+    (2 drift items, 3 debt items identified).
+- Blocked: none.
+- Next:
+  - Fix T1 (grep pattern injection in `ccx add`) and T2 (hardcoded store path).
+  - Update `decisions.md` with central store decision (D1 drift item).
+  - `git commit` the session's work.
 
 ### 2026-06-11
 - Done:
