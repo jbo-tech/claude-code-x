@@ -195,4 +195,8 @@ set -a
 set +a
 ulimit -c 0 2>/dev/null || true # no core dump can capture the token
 
+# The central store may export ANTHROPIC_API_KEY alongside ANTHROPIC_AUTH_TOKEN;
+# Claude Code rejects having both set, so drop the one we don't need.
+[ -n "${ANTHROPIC_AUTH_TOKEN:-}" ] && unset ANTHROPIC_API_KEY
+
 exec claude "$@"
