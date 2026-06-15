@@ -57,3 +57,15 @@ each provider needs `BASE_URL` + model config alongside the token, so a per-prov
 `.env` is still needed). Merging all provider configs into the central store (rejected:
 the `ANTHROPIC_*` variable mapping is ccx-specific, doesn't belong in a shared file).
 **Date**: 2026-06-13
+
+### Unset ANTHROPIC_API_KEY when ANTHROPIC_AUTH_TOKEN is set
+**Decision**: After loading the provider `.env`, `ccx` unsets `ANTHROPIC_API_KEY`
+if `ANTHROPIC_AUTH_TOKEN` is present. This prevents Claude Code from seeing both
+and emitting an auth conflict warning.
+**Context**: Claude Code added a check that rejects having both variables set.
+The central key store exports `ANTHROPIC_API_KEY` (used by other projects), which
+leaks into ccx's env when provider `.env` files source the store.
+**Alternatives considered**: Removing `ANTHROPIC_API_KEY` from the central store
+(rejected: other projects need it). Selectively sourcing only specific variables
+from the store (rejected: adds complexity, fragile).
+**Date**: 2026-06-15

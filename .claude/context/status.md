@@ -7,10 +7,22 @@ config. Single canonical `settings.json`, provider routing injected via env.
 Provider API keys centralized in `~/.config/llm-provider-keys/providers.env`.
 
 ## Current focus
-Central key store integration complete. Pending: commit, fix minor debt items
+Auth conflict fix committed (unstaged). Pending: commit, fix minor debt items
 (T1 grep pattern, T2 hardcoded path — see `docs/reference.md`).
 
 ## Log
+
+### 2026-06-15
+- Done:
+  - **Fix**: Claude Code now warns when both `ANTHROPIC_AUTH_TOKEN` and
+    `ANTHROPIC_API_KEY` are set. Root cause: central store exports
+    `ANTHROPIC_API_KEY` when sourced by provider `.env` files. Added
+    `unset ANTHROPIC_API_KEY` in `bin/ccx` (conditional on `ANTHROPIC_AUTH_TOKEN`
+    being set) before `exec claude`.
+- Blocked: none.
+- Next:
+  - `git commit` the fix.
+  - Fix T1 (grep pattern injection in `ccx add`) and T2 (hardcoded store path).
 
 ### 2026-06-13
 - Done:
